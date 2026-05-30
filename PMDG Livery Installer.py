@@ -43,8 +43,7 @@ def pscript(script_path, *params):
 # Get list of PTPs opened with EXE (does not work uncompiled)
 ptp_list = sys.argv
 # Set script path, cwd from first argument (does not work when launched through rel path in cmd)
-script_path = sys.argv[0].replace('\\PMDG Livery Installer.exe','')
-os.chdir(script_path)
+os.chdir(sys.argv[0].replace('\\PMDG Livery Installer.exe', ''))
 
 
 
@@ -56,27 +55,19 @@ print('=================\nPMDG Livery Installer\nfor Prepar3D v1-5\n============
 if len(ptp_list) <= 1:
     cont = True
     while cont:
-        ptp_list.append(input('Please type the FULL path to the PTP file(s) you want to install.\nIf that is too much, try reading the README next time :)\nPath goes here: ').replace("'",'').replace('"','').replace('.ptp','')+'.ptp')
-        cont = input('Would you like to add another file? y/n:   ').lower() == 'y'
+        ptp_list.append(input('Please type the FULL path to the PTP file(s) you want to install.\nPlease read the README for proper use of this program\nPath goes here: ').replace("'", '').replace('"', '').replace('.ptp', '')+'.ptp')
+        cont = input('Would you like to add another file? (y/n): ').lower() == 'y'
 
 # Delete script path from arguments list
 del ptp_list[0]
 
 for ptp_path in ptp_list:
-    
-    # Read P3D install path from registry
-    p3dversion = input('Which version of P3D do you wish to install "'+ptp_path+'" to?\n(Number only, e.g. enter "5" for P3Dv5), leave empty to skip this livery: ')
-    if not p3dversion in ['1','2','3','4','5','6']:
-        print('Invalid P3D version, skipping this livery...\n\n\n')
-        continue
-    p3dpath = Path(QueryValueEx(OpenKey(ConnectRegistry(None, HKEY_CURRENT_USER), 'SOFTWARE\\Lockheed Martin\\Prepar3D v'+p3dversion),'AppPath')[0])
-    print('Prepar3D installation found at', str(p3dpath))
 
     # Unpack PTP
     print('Unpacking', ptp_path, '...\n(Expect a large log from the unpacker)')
-    out_path = Path(ptp_path.replace('.ptp','').replace('+',' '))
+    out_path = Path(ptp_path.replace('.ptp', '').replace('+', ' '))
     print(pscript(os.path.join(os.getcwd(),'_internal\\unpack.ps1'), ptp_path))
-        
+    
     # Find texture folder in output (currently only picks last folder, error if multiple)
     out_list = os.listdir(out_path)
     tex_counter = 0
@@ -87,20 +78,29 @@ for ptp_path in ptp_list:
     if tex_counter > 1:
         print('Multiple textures found in "', ptp_path+'". Please install manually.')
         continue
-    else:
-        # Ask to isntall
-        tis_the_question = input(ptp_path+' has been unpacked.\nWould you like me to try to install this livery for you? y/n:  ')
-        if not tis_the_question.lower() == 'y':
-            continue
+    
+    # Ask to isntall
+    tis_the_question = input(ptp_path+' has been unpacked.\nWould you like me to try to install this livery for you? (y/n): ')
+    if not tis_the_question.lower() == 'y':
+        continue
+            
+    # Read P3D install path from registry
+    p3dversion = input('Which version of P3D do you wish to install "'+ptp_path+'" to?\n(Number only, e.g. enter "5" for P3Dv5), leave empty to skip this livery: ')
+    if not p3dversion in ['1', '2', '3', '4', '5', '6']:
+        print('Invalid P3D version, skipping this livery...\n\n\n')
+        continue
+    p3dpath = Path(QueryValueEx(OpenKey(ConnectRegistry(None, HKEY_CURRENT_USER), 'SOFTWARE\\Lockheed Martin\\Prepar3D v'+p3dversion),'AppPath')[0])
+    print('Prepar3D installation found at', str(p3dpath))
     
     # Read Settings.dat for product/variant, Config.cfg for registration and entry, set SimObject directory
     config_dat = configparser.RawConfigParser()
-    config_dat.read(os.path.join(out_path,'Settings.dat'))
+    config_dat.read(os.path.join(out_path, 'Settings.dat'))
     ac_prod = config_dat['Settings']['Aircraft']
     ac_var = config_dat['Settings']['Variant']
-    config_cfg = configparser.RawConfigParser(inline_comment_prefixes=('#',';','//'))
-    config_cfg.read(os.path.join(out_path,'Config.cfg'))
+    config_cfg = configparser.RawConfigParser(inline_comment_prefixes=('#', ';', '//'))
+    config_cfg.read(os.path.join(out_path, 'Config.cfg'))
     ac_reg = config_cfg['fltsim.x']['atc_id']
+    print('Detected product', ac_prod, 'variant', ac_var, 'registration', ac_reg)
     simobject = os.path.join(p3dpath, 'SimObjects\\Airplanes', ac_var)
     
     # Automatic product selection, dictionary {'aircraft name in settings.dat': 'aircraft folder name in Prepar3D v5\PMDG']
@@ -109,13 +109,11 @@ for ptp_path in ptp_list:
                 'PMDG 777X': 'PMDG 777X',
                 'PMDG DC-6': 'PMDG DC-6',
                 'PMDG 737NGX': 'PMDG 737 NGX'}
-    prod = products[ac_prod]
-    workext = 'PMDG\\'+prod+'\\Aircraft'
-    work = os.path.join(p3dpath, workext)
+    work = os.path.join(p3dpath, 'PMDG\\'+products[ac_prod]+'\\Aircraft')
 
     # Parse, checkaircraft.cfg for desired variant
-    ac_cfg_path = os.path.join(simobject,'aircraft.cfg')
-    ac_cfg = configparser.RawConfigParser(inline_comment_prefixes=('#',';','//'))
+    ac_cfg_path = os.path.join(simobject, 'aircraft.cfg')
+    ac_cfg = configparser.RawConfigParser(inline_comment_prefixes=('#', ';', '//'))
     ac_cfg.read(ac_cfg_path)
     if not 'fltsim.0' in ac_cfg:
         print('Invalid or missing aircraft.cfg for', ac_var+', skipping this livery...\n\n\n.')
@@ -123,9 +121,9 @@ for ptp_path in ptp_list:
     
     # Copy Aircraft.ini
     try:
-        shutil.copy(os.path.join(out_path,'Aircraft.ini'),os.path.join(work,ac_reg+'.ini'))
+        shutil.copy(os.path.join(out_path, 'Aircraft.ini'), os.path.join(work, ac_reg+'.ini'))
     except FileNotFoundError:
-        print('Livery Aircraft.ini or aircraft work directory ('+work+') not found.')
+        print('Specific aircraft configuration not found.')
     except Exception as error:
         print('Couldn\'t copy Aircraft.ini configuration file:', type(error).__name__)
     else:
@@ -133,18 +131,17 @@ for ptp_path in ptp_list:
         
     # Back up aircraft.cfg
     try:
-        shutil.copy(ac_cfg_path,ac_cfg_path.replace('.cfg','.cfg.bak'))
+        shutil.copy(ac_cfg_path, ac_cfg_path.replace('.cfg', '.cfg.bak'))
     except FileExistsError:
         print('Aircraft.cfg backup file already exists for', ac_var)
     except FileNotFoundError:
         print('Config.cfg or Aircraft.cfg file not found for', ac_var)
     except:
         print('Couldn\'t back up Aircraft.cfg file, skipping this livery...\n\n\n')
-        continue
     
     # Copy textures
     try:
-        shutil.copytree(os.path.join(out_path,tex_folder),os.path.join(simobject,tex_folder))
+        shutil.copytree(os.path.join(out_path, tex_folder), os.path.join(simobject, tex_folder))
     except FileNotFoundError:
         print('The livery\'s texture folder was not found')
     except FileExistsError:
@@ -153,36 +150,27 @@ for ptp_path in ptp_list:
         print('Couldn\'t copy texture files from "', tex_folder, '" for', ac_var, ';', type(error).__name__, '\nPlease copy these manually from the output folder.')
     else:
         print('Texture files for', ac_var, 'copied successfully')
-    
-    # Set correct fltsim index
-    ind = 0
-    while 'fltsim.'+str(ind) in ac_cfg:
-        ind += 1
-    # Add Aircraft.cfg entry in the right place (deletes comments)
-    print('Adding aircraft.cfg entry...')
-    final_cfg = configparser.RawConfigParser(inline_comment_prefixes=('#',';','//'))
-    fltsim_added = False
-    for sect in ac_cfg:
-        if not sect == 'DEFAULT':
-            if not sect.startswith('fltsim.') and not fltsim_added:
-                # Add new fltsim entry after last
-                final_cfg.add_section('fltsim.'+str(ind))
-                final_cfg['fltsim.'+str(ind)] = config_cfg['fltsim.x']
-                fltsim_added = True # Prevent duplicates
-            # Add next section as normal if it is not the current section
-            if not ac_cfg[sect] == config_cfg['fltsim.x']:
-                final_cfg.add_section(sect)
-                final_cfg[sect] = ac_cfg[sect]
-    # Write new Aircraft.cfg to file
-    with open(ac_cfg_path,'w') as write_cfg:
-        try:
-            final_cfg.write(write_cfg)
-        except Exception as error:
-            print('Could not add Aircraft.cfg entry:', type(error).__name__)
-        else:
-            print('Aircraft.cfg entry fltsim.'+str(ind), 'added successfully')
 
-    print('\nInstallation complete. Recommended to check logs and files.\n\n\n')
+    # Add aircraft.cfg entry
+    final_cfg = open(ac_cfg_path, 'w')
+    backup_cfg = open(ac_cfg_path.replace('.cfg', '.cfg.bak'), 'r')
+    config_cfg_plain = open(os.path.join(out_path, 'Config.cfg'), 'r')
+    
+    for line in backup_cfg:
+        if 'fltsim.' in line:
+            next_fltsim_idx = int(list(line)[8]) + 1
+        if '[General]'.lower() in line.lower():
+            print('Adding entry fltsim.'+str(next_fltsim_idx))
+            for entry_line in config_cfg_plain:
+                final_cfg.write(entry_line.replace('fltsim.x','fltsim.'+str(next_fltsim_idx)))
+            final_cfg.write('\n')
+        final_cfg.write(line)
+
+    backup_cfg.close()
+    config_cfg_plain.close()
+    final_cfg.close()
+
+    print('\nInstallation complete. Recommended to check logs and files.\n')
 
 print('A copy of the unpacked files for each livery can be found in the same directory as the original PTP file. Happy flying!\n')
 os.system('pause')

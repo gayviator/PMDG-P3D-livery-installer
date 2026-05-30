@@ -1,0 +1,32 @@
+V1.0.0 compiled 2026/05/28/22:05UTC with auto-py-to-exe
+V1.1.0 compiled 2026/05/28/17:30UTC with auto-py-to-exe
+V1.1.1 compiled 2026/05/29/16:30UTC with auto-py-to-exe
+V1.1.2 compiled 2026/05/30/14:15UTC with auto-py-to-exe
+V1.2.0 compiled 2026/05/30/19:30UTC with auto-py-to-exe
+
+Initial version 1.0.0
+
+CHANGELOG 1.1.0
+Added CFG to the correct place, side effect is deleting all comments. Backs up original aircraft.cfg
+Automatic product detection, more products
+P3D version and path now chosen for each PTP
+Cosmetic improvement
+
+CHANGELOG 1.1.1
+Fixed MD-11 work directory path
+Moved pscript function into print statement to output success/fail message
+
+CHANGELOG 1.1.2:
+Removed MD-11 options (does not use PTP)
+Removed PMDG icon
+
+CHANGELOG 1.2.0:
+New scheme for updating aircraft.cfg in plain text (still uses configparser to read information about the livery)
+P3D installation check comes after PTP unpacking
+Dropped the sass
+New icon
+
+Todo:
+testing with all variants on main PC, test that it works with [fltsim.0] [fltsim.1]
+FSX support
+Multiple texture folders/fltsim entries
